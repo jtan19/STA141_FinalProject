@@ -1,0 +1,283 @@
+---
+title: "WHO COVID-19 Data Analysis: the 'weekend effect' in US and world"
+author: "Tina Tan 914650494"
+date: "03/12/2022"
+output:
+  md_document 
+  
+---
+
+***
+## I. Introduction
+
+It had several articles and news reported that there was a "weekend effect" in COVID-19 cases and mortality. According to ABC News, the Ohio Department of Health found that the number of new cases reported was lowest on the weekends, and then the cases would rise throughout the week, often peaking on Friday. Meanwhile, professor Lauren Hale from Public Health at Stony Brook University School of Medicine also observed this "weekend effect" weekly cycles occurring in the US and other countries. Professor Lauren stated the reason for the "weekend effect" occurring would including:1) fewer people getting tested on the weekends; 2) fewer lab tests process on the weekends; 3) delay in reporting lags on weekends; 4) weekend lead to more initial symptoms on weekdays. In this report, I utilized the WHO COVID-19 data to extent the similar research and see if "weekend effect" also occurs in whole U.S. and even the world regions. 
+
+ 
+***
+## II.Data Backgroud and Overview
+
+The WHO COVID-19 data provided daily updates on global, regional, and country-level COVID-19 cases and deaths. The data was collected every day which starts from Jan 03,2020. By the date of this report, the data totally contained 188620 observations with 8 variables. The 8 variables were:
+
+1. Date_reproted: data of reported (year-month-day)
+2. Country_code:  short alphabetic or numeric geographical codes
+3. Country name
+4. WHO_regin: African Region (AFR), Region of the Americas (AMR), South-East Asian Region (SEAR), European Region (EUR), Eastern Mediterranean Region (EMR), and Western Pacific Region (WPR)
+5. New_cases: number of new cases on the reported date
+6. Cumulative cases: cumulative cases by the reported date
+7. New_deaths: number of new deaths on the reported date 
+8. Cumulative_deathes: cumulative deathes by the reported date
+
+
+```{r,include=FALSE}
+library(tidyverse)
+library(gridExtra)
+library(scales)
+library(lubridate)
+library(ggplot2)
+library(haven)
+library(MASS)
+library(knitr)
+```
+
+```{r,echo=FALSE,message=FALSE}
+## Load WHO COVID-19 dataset
+covid <- read_csv("https://covid19.who.int/WHO-COVID-19-global-data.csv")
+
+covid <- covid %>% 
+  filter(WHO_region != "Other") %>% 
+  mutate(WHO_region = fct_recode(WHO_region,"Eastern Mediterranean"="EMRO","Europe" = "EURO","Africa" = "AFRO","Western Pacific" = "WPRO","Americas"="AMRO","South-East Asia" = "SEARO"))
+covid
+```
+
+### New Cases
+The spaghetti plot below briefly showed the total daily New_cases for each WHO_region that provided an overview of the daily new cases trends. In this case, the WHO_region was treated as the basic unit during analysis. The New_case of countries from the same region would be summed up and then compared to each other.
+
+```{r,echo=FALSE,message=FALSE,fig.align='center'}
+## Overview
+## Obtain daily New_cases in the world by WHO_region 
+newcases_regions<-covid %>%
+          group_by(Date_reported,WHO_region) %>%
+          summarise(sum_newcases=sum(New_cases))
+head(newcases_regions)
+
+
+## Spaghetti plot
+(linegraph<- newcases_regions %>% filter(Date_reported>= "2020-01-03", Date_reported<= "2022-03-12") %>% 
+  mutate(Date=as.Date(Date_reported)) %>%
+  ggplot(aes(x=Date,y=sum_newcases,by=WHO_region)) +
+  geom_line(aes(color=WHO_region)) +
+  theme(legend.position ='bottom'))
+```
+
+As seen in the plot, the daily new case was increasing as the date went.  During 2020-2021, all six regions kept the new cases under 500,000. After Dec 2021, all six regions had a significant increase in new cases due to the presence of the new COVID-19 variant, Omicron. At beginning of Jan 2022, the Americas had around 2,000,000 daily new cases while Europe had around 1,500,000  new cases. 
+
+### Case-mortality Rate
+
+```{r,echo=FALSE,message=FALSE,fig.align='center'}
+## Calculate case-mortality rate
+covidmortality<-covid[c("Date_reported", "WHO_region", "Cumulative_cases", "Cumulative_deaths")]
+covidmortality <- covidmortality %>%
+  add_column(Case_mortality_rate = (covidmortality$Cumulative_deaths)/(covidmortality$Cumulative_cases),
+             .after = "Cumulative_deaths") 
+
+covidmortality[is.na(covidmortality)] <- 0
+head(covidmortality)
+
+ggplot(data = covidmortality, aes(x = Date_reported, y = Case_mortality_rate, by = WHO_region)) +
+  geom_line(aes(color=WHO_region)) 
+
+```
+
+On the other hand, Western Pacific and Eastern Mediterranean had high rates in case_mortality_rate in the middle of 2020. However, the case_mortality_ratea were decreasing in six regions as time went. It was surprising that trends of case_mortality_rate were opposite with the trends of the new cases in six regions.
+
+***
+## III. Descriptive analysis - WHO COVID-19 
+
+The following dataset "covid" would be used to analyze whether the "weekend effect" also coccus in US and world. The dataset selected the related variables from original data set. Also, it was added new column “Weekday_or_Weekend” in the selected data frame as indicators to determine the date if it is a weekend or not. (Weekend = TRUE, Weekday = FALSE)
+
+```{r,echo=FALSE,message=FALSE,fig.align='center'}
+## Select the interested variables
+covid<-covid[c("Date_reported", "WHO_region", "Country", "New_cases")]
+
+## Determine if date is a weekend or not
+## Weekend(Sat&Sun) = TRUE, Weekday(Mon-Fri) = FALSE
+library(lubridate);library(chron)
+wkend<-is.weekend(covid$Date_reported)
+
+## Add columns in dataframe
+covid<- covid %>%
+  add_column("Weekday_or_Weekend"= if_else(wkend, TRUE, FALSE)) 
+head(covid)
+```
+
+## VI. USA: Descriptive and Inferetial analysis
+
+### Descriptive analysis
+
+Let's focus on the daily new case in the USA! Since the article of  Ohio Department of Health was published in September 2021. So, I would like to just focus the data on 2021 to see whether the "weekend effect" also applies to the whole US in 2021. The following dataset "newcases_usa" showed the reported data (including the weekend indicators) and corresponding new cases. The plot below briefly showed the trend of the daily new cases in 2021. Additionally, the boxplot shows the weekend has a higher average daily new case than weekday. (Note: "Weekend Effect"reflect the new cases in weekday < weekend)
+
+```{r,echo=FALSE,message=FALSE,fig.height=3,fig.align='center'}
+newcases_usa<-covid %>% filter(Country=="United States of America", Date_reported>= "2021-01-01", Date_reported<= "2021-12-31") 
+head(newcases_usa)
+plot(newcases_usa$Date_reported, newcases_usa$New_cases, xlab = "Date_reported", ylab = "New_cases",main = " 2021: Date vs. Reported New Cases (US)", type = "l")
+
+## Boxplot
+ggplot(data=newcases_usa, mapping=aes(x=Weekday_or_Weekend, y=New_cases)) +
+  geom_boxplot() +
+  xlab("Weekdays=FLASE, Weekends=TRUE")
+```
+
+
+### Data transformation
+
+Checking the histogram of response. The histogram showed right skewed which the peak of the histogram lies on the left side of the center. In this case, before fit a model for analyzing, I would like to use the log transformation to make data normality.
+
+```{r,echo=FALSE,message=FALSE,fig.align='center'}
+par(mfrow=c(1,2))
+hist(newcases_usa$New_cases,
+     main="Histogram for Average New Cases",
+     xlab = "Average New Cases")
+lognewcases_usa<-log(newcases_usa$New_cases)
+hist(lognewcases_usa)
+```
+
+
+###  Inferential analysis
+
+Next, we fit a regression a full linear model involving log(New_cases) as response variable on the predictors "Weekday_or_Weekend". 
+
+```{r,echo=FALSE,message=FALSE}
+model1<-lm(New_cases~Weekday_or_Weekend, data=newcases_usa)
+coef(summary(model1))
+```
+
+i.e. $$ y_{ij}=\alpha+\beta*x_{wk}+\epsilon_{ij}$$
+
+
+where,
+$$ \begin{align*}
+\hat\alpha&\approx 88138.52 \\
+\hat\beta_1&\approx 17079.58 \\
+\end{align*} $$
+
+Then, running a one-way ANOVA.
+
+$$\mathrm{H0:There\ is\ NO \ difference\ in \ the\ daily \ new  \ cases \ between \ weekend \ and \ weekday \ in \ USA.}$$
+$$\mathrm{H1:There\ is\ a \ difference\ in \ the\ daily \ new  \ cases \ between \ weekend \ and \ weekday \ in \ USA.}$$
+
+```{r,echo=FALSE,message=FALSE}
+anova(model1)
+```
+From the output of one-way ANOVA, we could see that Weekday_or_Weekend explained a significant variation in the new cases since its p-values less than 0.05. Hence, in this case, we could conclude that the daily new case related to weekend and weekday in the USA.
+
+```{r,echo=FALSE,message=FALSE,fig.height=3,fig.align='center'}
+plot(model1, which = 1)
+plot(model1, which = 2)
+```
+
+
+As seen in the Observed vs Fitted values plot, all data points fall into the clusters on two sides since our predictor "Weekday_or_Weekend" was binary variable. On the other, we can use the QQ-plot for checking the normality. From the above QQ-plot, main points are located around the theoretical dash line that showing $\epsilon_{ij}$ are roughly normally distrusted.But it still have heavy tail at the end.
+
+
+## VI. All Country (World): Descriptive and Inferetial analysis
+
+### Descriptive analysis
+
+The dataset "newcases_wk" was used for analysis whether there is "weekend effect" in new cases among the world. The time span of the dataset from 2020-01-03 to 2020-03-12. In this databset, there was total 187 country, each country has two observations:  the mean of daily new case in weekend and weekdays. The country did not have two observation would excused form the analysis, for example, Nicaragua only had the mean of new case in weekend. 
+
+
+According the table below, we could quickly look at the different in daily new case between weekend and weekday. Weekend (TRUE) has slight less daily new cases than weekend (FLASE). On the other hand, the box plot of average daily new case would also show that weekend and weekday has similar average daily new case in whole world. In this case, I removed outlines from dataset according to the boxplot.
+
+
+```{r,echo=FALSE,message=FALSE,fig.align='center'}
+newcases_country<-covid %>%
+          group_by(Country,Weekday_or_Weekend) %>%
+          summarise(mean_newcases=mean(New_cases))
+newcases_country<-newcases_country %>% filter(Country != "Nicaragua")
+
+## mean_newcase: weekday vs.weekend
+(mean=newcases_country %>% 
+  group_by(Weekday_or_Weekend) %>%
+  summarise(mean=mean(mean_newcases)))
+
+## Boxplot
+ggplot(data=newcases_country, mapping=aes(x=Weekday_or_Weekend, y=mean_newcases)) +
+  geom_boxplot(outlier.shape = NA) +
+  coord_cartesian(ylim=c(0,3000)) +
+  xlab("Weekdays=FLASE, Weekends=TRUE")
+
+## excluding outliers mean_newcases >= 3000 and mean_newcases <= 1 according to boxplot 
+newcases_country<-newcases_country %>% filter(mean_newcases>= 1, mean_newcases<= 3000)
+newcases_country %>% arrange(mean_newcases) %>% head()
+```
+
+
+### Data transformation
+
+In this case, before fit a model for analyzing, I would like to use the log transformation to make data normality since the histogram had a right skewed. 
+
+```{r,echo=FALSE,message=FALSE,fig.align='center'}
+par(mfrow=c(1,2))
+hist(newcases_country$mean_newcases,
+     main="Histogram for Mean_New Cases")
+
+## log transformation
+zerocases<-newcases_country$mean_newcases==0
+newcases_country$mean_newcases[zerocases] <- 1e-09
+logmean_newcases<-log(newcases_country$mean_newcases)
+hist(logmean_newcases)
+```
+
+### Inferential analysis
+
+```{r,echo=FALSE,message=FALSE}
+model2<-lm(logmean_newcases~Weekday_or_Weekend, data=newcases_country)
+coef(summary(model2))
+```
+
+Next, we fit a regression a full linear model involving log(mean_newcases) as response variable on the predictors "Weekday_or_Weekend". 
+
+i.e. $$ y_{ij}=\alpha+\beta*x_{wk}+\epsilon_{ij}$$ 
+
+where,
+$$ \begin{align*}
+\hat\alpha&\approx 4.82211986 \\
+\hat\beta_1&\approx -0.04693072 \\
+\end{align*} $$
+
+Then, tuning a one-way ANOVA.
+
+$$\mathrm{H0:There\ is\ NO \ difference\ in \ the\  global \ daily \ new  \ cases \ between \ weekend \ and \ weekday.}$$
+$$\mathrm{H1:There\ is\ a \ difference\ in \ the\  global \ daily \ new  \ cases \ between \ weekend \ and \ weekday.}$$
+
+```{r,echo=FALSE,message=FALSE}
+summary(aov(model2))
+```
+From the output of one-way ANOVA, we could see that Weekday_or_Weekend did not explains a significant variation in the new cases since its p-values much greater than 0.05. Hence, in this case, we could conclude global daily new case not related to weekend and weekday.
+
+```{r,echo=FALSE,message=FALSE,fig.height=3,fig.align='center'}
+plot(model2, which = 1)
+plot(model2, which = 2)
+```
+
+As seen in the Observed vs Fitted values plot, all data points fall into the clusters on two sides since our predictor "Weekday_or_Weekend" was binary variable. On the other, we can use the QQ-plol for checking the normality. From the above QQ-plot, main points were NOT located around the theoretical dash line that showing $\epsilon_{ij}$ are roughly normally distrusted.But it still have heavy tail at both sides.
+
+***
+
+# IV. Conclusion
+
+At the beginning of the report, we regenerated the data by grouping the daily new cases with the WHO region. Also, we used True or False to determine whether the date was weekend or not. We were interested in if there is a difference in new cases between weekday and weekend in USA and whole world. 
+
+Then, we used a spaghetti plot to investigate the relationship between the daily new cases in different regions. In the spaghetti plot, I don’t see that there is an obvious relationship between the daily new cases in the different regions through we could see the daily new cases is increasing every day. I think is it because the more people infected the COVID while the spread of COVID also increases. Both plots show us that the Americas and Europe have much higher new cases than the other regions. On the other, I found the trends of case_mortality_rate were opposite with the trends of the new cases in six regions.
+
+We used a one-way ANOVA test to check if there is a difference in new cases between weekdays and weekends in the USA and even the whole world. From the ANOVA test, Weekday_or_Weekend explained a significant variation in the new cases in the USA. But it was not present "Weekend Effect" since the boxplot showing the weekend had a higher average daily cases than a weekday. On the other hand, there is not enough evidence to prove there is a “Weekend Effect” globally, and the analysis model did not hold any assumption. In the future, I think we should try adding more predictors to see whether other conditions may affect new cases, for example, income, population, vaccination, etc. 
+
+
+# Reference {-}
+
+1. Cross, I. (2021, September 29). There's a reason why daily COVID cases are lower on weekends and higher during the Week. WEWS. Retrieved February 18, 2022, from https://www.news5cleveland.com/news/continuing-coverage/coronavirus/theres-a-reason-why-daily-covid-cases-are-lower-on-weekends-and-higher-during-the-week 
+
+2. Hale, L. (2020, December 19). Why are covid-19 numbers lower on the weekends? Dear Pandemic. Retrieved February 18, 2022, from https://dearpandemic.org/covid-19-numbers-lower-on-the-weekends/ 
+
+3. Lonzerj. (2020, November 11). The weekend effect and covid-19 mortality. Consult QD. Retrieved February 18, 2022, from https://consultqd.clevelandclinic.org/the-weekend-effect-and-covid-19-mortality/?fbclid=IwAR0qDj-8JNeg68ggK9zH_Xplnoh0W0VxAQfERi2CgYBk-VTho06RyIgqjWc 
+
