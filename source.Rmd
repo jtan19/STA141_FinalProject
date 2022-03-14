@@ -3,7 +3,7 @@ title: "WHO COVID-19 Data Analysis: the 'weekend effect' in US and world"
 author: "Tina Tan 914650494"
 date: "03/12/2022"
 output:
-  md_document 
+  github_document 
   
 ---
 

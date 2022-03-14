@@ -1,3 +1,8 @@
+WHO COVID-19 Data Analysis: the ‘weekend effect’ in US and world
+================
+Tina Tan 914650494
+03/12/2022
+
 ------------------------------------------------------------------------
 
 ## I. Introduction
@@ -27,16 +32,16 @@ day which starts from Jan 03,2020. By the date of this report, the data
 totally contained 188620 observations with 8 variables. The 8 variables
 were:
 
-1.  Date\_reproted: data of reported (year-month-day)
-2.  Country\_code: short alphabetic or numeric geographical codes
+1.  Date_reproted: data of reported (year-month-day)
+2.  Country_code: short alphabetic or numeric geographical codes
 3.  Country name
-4.  WHO\_regin: African Region (AFR), Region of the Americas (AMR),
+4.  WHO_regin: African Region (AFR), Region of the Americas (AMR),
     South-East Asian Region (SEAR), European Region (EUR), Eastern
     Mediterranean Region (EMR), and Western Pacific Region (WPR)
-5.  New\_cases: number of new cases on the reported date
+5.  New_cases: number of new cases on the reported date
 6.  Cumulative cases: cumulative cases by the reported date
-7.  New\_deaths: number of new deaths on the reported date
-8.  Cumulative\_deathes: cumulative deathes by the reported date
+7.  New_deaths: number of new deaths on the reported date
+8.  Cumulative_deathes: cumulative deathes by the reported date
 
 <!-- -->
 
@@ -58,11 +63,11 @@ were:
 
 ### New Cases
 
-The spaghetti plot below briefly showed the total daily New\_cases for
-each WHO\_region that provided an overview of the daily new cases
-trends. In this case, the WHO\_region was treated as the basic unit
-during analysis. The New\_case of countries from the same region would
-be summed up and then compared to each other.
+The spaghetti plot below briefly showed the total daily New_cases for
+each WHO_region that provided an overview of the daily new cases trends.
+In this case, the WHO_region was treated as the basic unit during
+analysis. The New_case of countries from the same region would be summed
+up and then compared to each other.
 
     ## # A tibble: 6 × 3
     ## # Groups:   Date_reported [1]
@@ -75,7 +80,7 @@ be summed up and then compared to each other.
     ## 5 2020-01-03    South-East Asia                  0
     ## 6 2020-01-03    Western Pacific                  0
 
-<img src="Report_files/figure-markdown_strict/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
+<img src="source_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
 
 As seen in the plot, the daily new case was increasing as the date went.
 During 2020-2021, all six regions kept the new cases under 500,000.
@@ -96,13 +101,13 @@ Europe had around 1,500,000 new cases.
     ## 5 2020-01-07    Eastern Medi…                0                0                0
     ## 6 2020-01-08    Eastern Medi…                0                0                0
 
-<img src="Report_files/figure-markdown_strict/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+<img src="source_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
 
 On the other hand, Western Pacific and Eastern Mediterranean had high
-rates in case\_mortality\_rate in the middle of 2020. However, the
-case\_mortality\_ratea were decreasing in six regions as time went. It
-was surprising that trends of case\_mortality\_rate were opposite with
-the trends of the new cases in six regions.
+rates in case_mortality_rate in the middle of 2020. However, the
+case_mortality_ratea were decreasing in six regions as time went. It was
+surprising that trends of case_mortality_rate were opposite with the
+trends of the new cases in six regions.
 
 ------------------------------------------------------------------------
 
@@ -111,7 +116,7 @@ the trends of the new cases in six regions.
 The following dataset “covid” would be used to analyze whether the
 “weekend effect” also coccus in US and world. The dataset selected the
 related variables from original data set. Also, it was added new column
-“Weekday\_or\_Weekend” in the selected data frame as indicators to
+“Weekday_or_Weekend” in the selected data frame as indicators to
 determine the date if it is a weekend or not. (Weekend = TRUE, Weekday =
 FALSE)
 
@@ -132,12 +137,12 @@ FALSE)
 Let’s focus on the daily new case in the USA! Since the article of Ohio
 Department of Health was published in September 2021. So, I would like
 to just focus the data on 2021 to see whether the “weekend effect” also
-applies to the whole US in 2021. The following dataset “newcases\_usa”
+applies to the whole US in 2021. The following dataset “newcases_usa”
 showed the reported data (including the weekend indicators) and
 corresponding new cases. The plot below briefly showed the trend of the
 daily new cases in 2021. Additionally, the boxplot shows the weekend has
 a higher average daily new case than weekday. (Note: “Weekend
-Effect”reflect the new cases in weekday &lt; weekend)
+Effect”reflect the new cases in weekday \< weekend)
 
     ## # A tibble: 6 × 5
     ##   Date_reported WHO_region Country                  New_cases Weekday_or_Weekend
@@ -149,7 +154,7 @@ Effect”reflect the new cases in weekday &lt; weekend)
     ## 5 2021-01-05    Americas   United States of America    204647 FALSE             
     ## 6 2021-01-06    Americas   United States of America    175024 FALSE
 
-<img src="Report_files/figure-markdown_strict/unnamed-chunk-6-1.png" style="display: block; margin: auto;" /><img src="Report_files/figure-markdown_strict/unnamed-chunk-6-2.png" style="display: block; margin: auto;" />
+<img src="source_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" /><img src="source_files/figure-gfm/unnamed-chunk-6-2.png" style="display: block; margin: auto;" />
 
 ### Data transformation
 
@@ -158,12 +163,12 @@ which the peak of the histogram lies on the left side of the center. In
 this case, before fit a model for analyzing, I would like to use the log
 transformation to make data normality.
 
-<img src="Report_files/figure-markdown_strict/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+<img src="source_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
 
 ### Inferential analysis
 
-Next, we fit a regression a full linear model involving log(New\_cases)
-as response variable on the predictors “Weekday\_or\_Weekend”.
+Next, we fit a regression a full linear model involving log(New_cases)
+as response variable on the predictors “Weekday_or_Weekend”.
 
     ##                        Estimate Std. Error   t value     Pr(>|t|)
     ## (Intercept)            88138.52   4256.174 20.708391 1.881352e-63
@@ -175,7 +180,7 @@ i.e. 
 where,
 $$ \\begin{align\*}
 \\hat\\alpha&\\approx 88138.52 \\\\
-\\hat\\beta\_1&\\approx 17079.58 \\\\
+\\hat\\beta_1&\\approx 17079.58 \\\\
 \\end{align\*} $$
 
 Then, running a one-way ANOVA.
@@ -192,15 +197,15 @@ H1 : There is a difference in the daily new cases between weekend�
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-From the output of one-way ANOVA, we could see that Weekday\_or\_Weekend
+From the output of one-way ANOVA, we could see that Weekday_or_Weekend
 explained a significant variation in the new cases since its p-values
 less than 0.05. Hence, in this case, we could conclude that the daily
 new case related to weekend and weekday in the USA.
 
-<img src="Report_files/figure-markdown_strict/unnamed-chunk-10-1.png" style="display: block; margin: auto;" /><img src="Report_files/figure-markdown_strict/unnamed-chunk-10-2.png" style="display: block; margin: auto;" />
+<img src="source_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" /><img src="source_files/figure-gfm/unnamed-chunk-10-2.png" style="display: block; margin: auto;" />
 
 As seen in the Observed vs Fitted values plot, all data points fall into
-the clusters on two sides since our predictor “Weekday\_or\_Weekend” was
+the clusters on two sides since our predictor “Weekday_or_Weekend” was
 binary variable. On the other, we can use the QQ-plot for checking the
 normality. From the above QQ-plot, main points are located around the
 theoretical dash line that showing *ϵ*<sub>*i**j*</sub> are roughly
@@ -210,7 +215,7 @@ normally distrusted.But it still have heavy tail at the end.
 
 ### Descriptive analysis
 
-The dataset “newcases\_wk” was used for analysis whether there is
+The dataset “newcases_wk” was used for analysis whether there is
 “weekend effect” in new cases among the world. The time span of the
 dataset from 2020-01-03 to 2020-03-12. In this databset, there was total
 187 country, each country has two observations: the mean of daily new
@@ -231,7 +236,7 @@ removed outlines from dataset according to the boxplot.
     ## 1 FALSE              2372.
     ## 2 TRUE               2551.
 
-<img src="Report_files/figure-markdown_strict/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
+<img src="source_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
 
     ## # A tibble: 6 × 3
     ## # Groups:   Country [6]
@@ -250,7 +255,7 @@ In this case, before fit a model for analyzing, I would like to use the
 log transformation to make data normality since the histogram had a
 right skewed.
 
-<img src="Report_files/figure-markdown_strict/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
+<img src="source_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
 
 ### Inferential analysis
 
@@ -259,8 +264,8 @@ right skewed.
     ## Weekday_or_WeekendTRUE -0.04693072  0.1974964 -0.2376282  8.123089e-01
 
 Next, we fit a regression a full linear model involving
-log(mean\_newcases) as response variable on the predictors
-“Weekday\_or\_Weekend”.
+log(mean_newcases) as response variable on the predictors
+“Weekday_or_Weekend”.
 
 i.e. 
 *y*<sub>*i**j*</sub> = *α* + *β* \* *x*<sub>*w**k*</sub> + *ϵ*<sub>*i**j*</sub>
@@ -268,7 +273,7 @@ i.e. 
 where,
 $$ \\begin{align\*}
 \\hat\\alpha&\\approx 4.82211986 \\\\
-\\hat\\beta\_1&\\approx -0.04693072 \\\\
+\\hat\\beta_1&\\approx -0.04693072 \\\\
 \\end{align\*} $$
 
 Then, tuning a one-way ANOVA.
@@ -280,15 +285,15 @@ H1 : There is a difference in the global daily new cases between 
     ## Weekday_or_Weekend   1    0.2   0.193   0.056  0.812
     ## Residuals          349 1194.4   3.422
 
-From the output of one-way ANOVA, we could see that Weekday\_or\_Weekend
+From the output of one-way ANOVA, we could see that Weekday_or_Weekend
 did not explains a significant variation in the new cases since its
 p-values much greater than 0.05. Hence, in this case, we could conclude
 global daily new case not related to weekend and weekday.
 
-<img src="Report_files/figure-markdown_strict/unnamed-chunk-15-1.png" style="display: block; margin: auto;" /><img src="Report_files/figure-markdown_strict/unnamed-chunk-15-2.png" style="display: block; margin: auto;" />
+<img src="source_files/figure-gfm/unnamed-chunk-15-1.png" style="display: block; margin: auto;" /><img src="source_files/figure-gfm/unnamed-chunk-15-2.png" style="display: block; margin: auto;" />
 
 As seen in the Observed vs Fitted values plot, all data points fall into
-the clusters on two sides since our predictor “Weekday\_or\_Weekend” was
+the clusters on two sides since our predictor “Weekday_or_Weekend” was
 binary variable. On the other, we can use the QQ-plol for checking the
 normality. From the above QQ-plot, main points were NOT located around
 the theoretical dash line that showing *ϵ*<sub>*i**j*</sub> are roughly
@@ -311,12 +316,12 @@ the different regions through we could see the daily new cases is
 increasing every day. I think is it because the more people infected the
 COVID while the spread of COVID also increases. Both plots show us that
 the Americas and Europe have much higher new cases than the other
-regions. On the other, I found the trends of case\_mortality\_rate were
+regions. On the other, I found the trends of case_mortality_rate were
 opposite with the trends of the new cases in six regions.
 
 We used a one-way ANOVA test to check if there is a difference in new
 cases between weekdays and weekends in the USA and even the whole world.
-From the ANOVA test, Weekday\_or\_Weekend explained a significant
+From the ANOVA test, Weekday_or_Weekend explained a significant
 variation in the new cases in the USA. But it was not present “Weekend
 Effect” since the boxplot showing the weekend had a higher average daily
 cases than a weekday. On the other hand, there is not enough evidence to
